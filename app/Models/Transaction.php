@@ -16,7 +16,8 @@ class Transaction extends Model
         'discount_amount',
         'discount_type',
         'total',
-        'payment_method'
+        'payment_method',
+        'service_fee',
     ];
 
     public function user()

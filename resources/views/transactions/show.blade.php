@@ -6,6 +6,7 @@
             <h1>Detail Transaksi #{{ $transaction->invoice_number }}</h1>
             <div>
                 <a href="{{ route('transactions.index') }}" class="btn btn-secondary">Kembali</a>
+                <a href="{{ route('transactions.edit', $transaction) }}" class="btn btn-warning">Edit</a>
                 <a href="{{ route('transactions.print', $transaction) }}" class="btn btn-primary" target="_blank">Cetak</a>
             </div>
         </div>
@@ -17,6 +18,11 @@
                         <h5 class="mb-0">Informasi Transaksi</h5>
                     </div>
                     <div class="card-body">
+                        @if (session('success'))
+                            <div class="alert alert-success mt-3">
+                                {{ session('success') }}
+                            </div>
+                        @endif
                         <table class="table table-borderless">
                             <tr>
                                 <th width="150">Invoice</th>
@@ -48,6 +54,10 @@
                             <tr>
                                 <th width="150">Subtotal</th>
                                 <td>Rp {{ number_format($transaction->subtotal, 0, ',', '.') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Biaya Jasa</th>
+                                <td>Rp {{ number_format($transaction->service_fee, 0, ',', '.') }}</td>
                             </tr>
                             <tr>
                                 <th>Diskon</th>

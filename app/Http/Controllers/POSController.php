@@ -25,7 +25,8 @@ class POSController extends Controller
             'products.*.quantity' => 'required|integer|min:1',
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_amount' => 'nullable|numeric|min:0',
-            'payment_method' => 'required|in:cash,non-cash'
+            'payment_method' => 'required|in:cash,non-cash',
+            'service_fee' => 'required|numeric|min:0',
         ]);
 
         DB::beginTransaction();
@@ -59,7 +60,9 @@ class POSController extends Controller
                 $discountAmount = $request->discount_amount;
             }
 
-            $total = $subtotal - $discountAmount;
+            // Calculate total with service fee
+            $serviceFee = $request->service_fee;
+            $total = $subtotal - $discountAmount + $serviceFee;
 
             // Create transaction
             $transaction = Transaction::create([
@@ -68,6 +71,7 @@ class POSController extends Controller
                 'subtotal' => $subtotal,
                 'discount_type' => $request->discount_type,
                 'discount_amount' => $discountAmount,
+                'service_fee' => $serviceFee,
                 'total' => $total,
                 'payment_method' => $request->payment_method
             ]);

@@ -31,6 +31,8 @@
                                     <td>
                                         <a href="{{ route('transactions.show', $transaction) }}"
                                             class="btn btn-sm btn-info">Detail</a>
+                                        <a href="{{ route('transactions.edit', $transaction) }}"
+                                            class="btn btn-sm btn-warning">Edit</a>
                                         <a href="{{ route('transactions.invoice', $transaction) }}"
                                             class="btn btn-sm btn-primary">Invoice</a>
                                         <a href="{{ route('transactions.print', $transaction) }}"

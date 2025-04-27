@@ -2,7 +2,12 @@
 
 @section('content')
     <div class="container-fluid">
-        <h1 class="mt-4">Point of Sale</h1>
+        <h1 class="mt-4">Edit Transaksi #{{ $transaction->invoice_number }}</h1>
+
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
+
         <div class="row mt-4">
             <div class="col-md-7">
                 <div class="card">
@@ -35,56 +40,72 @@
             <div class="col-md-5">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Keranjang</h5>
+                        <h5 class="card-title mb-0">Detail Transaksi</h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Produk</th>
-                                        <th>Qty</th>
-                                        <th>Harga</th>
-                                        <th>Subtotal</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cartItems">
-                                </tbody>
-                            </table>
-                        </div>
-                        <hr>
-                        <div class="mb-3">
-                            <label>Subtotal</label>
-                            <input type="text" class="form-control" id="subtotal" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Biaya Jasa</label>
-                            <input type="number" class="form-control" id="serviceFee" value="50000" min="0">
-                        </div>
-                        <div class="mb-3">
-                            <label>Diskon</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="discountAmount" min="0"
-                                    value="0">
-                                <select class="form-select" id="discountType" style="max-width: 120px;">
-                                    <option value="fixed">Rp</option>
-                                    <option value="percentage">%</option>
+                        <form action="{{ route('transactions.update', $transaction) }}" method="POST" id="editForm">
+                            @csrf
+                            @method('PUT')
+
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Produk</th>
+                                            <th>Qty</th>
+                                            <th>Harga</th>
+                                            <th>Subtotal</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cartItems">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <hr>
+                            <div class="mb-3">
+                                <label>Subtotal</label>
+                                <input type="text" class="form-control" id="subtotal" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label>Biaya Jasa</label>
+                                <input type="number" class="form-control" id="serviceFee" name="service_fee"
+                                    value="{{ $transaction->service_fee }}" min="0">
+                            </div>
+                            <div class="mb-3">
+                                <label>Diskon</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="discountAmount" name="discount_amount"
+                                        value="{{ $transaction->discount_type == 'percentage' ? $transaction->discount_amount : ($transaction->discount_type == 'fixed' ? $transaction->discount_amount : 0) }}"
+                                        min="0">
+                                    <select class="form-select" id="discountType" name="discount_type"
+                                        style="max-width: 120px;">
+                                        <option value="fixed"
+                                            {{ $transaction->discount_type == 'fixed' ? 'selected' : '' }}>Rp</option>
+                                        <option value="percentage"
+                                            {{ $transaction->discount_type == 'percentage' ? 'selected' : '' }}>%</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label>Total</label>
+                                <input type="text" class="form-control" id="total" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label>Metode Pembayaran</label>
+                                <select class="form-select" id="paymentMethod" name="payment_method">
+                                    <option value="cash" {{ $transaction->payment_method == 'cash' ? 'selected' : '' }}>
+                                        Tunai</option>
+                                    <option value="non-cash"
+                                        {{ $transaction->payment_method == 'non-cash' ? 'selected' : '' }}>Non-Tunai
+                                    </option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <label>Total</label>
-                            <input type="text" class="form-control" id="total" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Metode Pembayaran</label>
-                            <select class="form-select" id="paymentMethod">
-                                <option value="cash">Tunai</option>
-                                <option value="non-cash">Non-Tunai</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary w-100" onclick="processTransaction()">Proses Pembayaran</button>
+                            <div id="productsInput"></div>
+                            <button type="submit" class="btn btn-primary w-100">Update Transaksi</button>
+                            <a href="{{ route('transactions.show', $transaction) }}"
+                                class="btn btn-secondary w-100 mt-2">Batal</a>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -95,6 +116,19 @@
 @push('scripts')
     <script>
         let cart = [];
+
+        // Load existing transaction items
+        @foreach ($transaction->details as $detail)
+            cart.push({
+                id: {{ $detail->product_id }},
+                name: "{{ $detail->product->name }}",
+                price: {{ $detail->price }},
+                quantity: {{ $detail->quantity }}
+            });
+        @endforeach
+
+        // Update cart display immediately
+        updateCart();
 
         function addToCart(id, name, price) {
             const existingItem = cart.find(item => item.id === id);
@@ -130,11 +164,13 @@
 
         function updateCart() {
             const cartItems = document.getElementById('cartItems');
+            const productsInput = document.getElementById('productsInput');
             cartItems.innerHTML = '';
+            productsInput.innerHTML = '';
 
             let subtotal = 0;
 
-            cart.forEach(item => {
+            cart.forEach((item, index) => {
                 const itemSubtotal = item.price * item.quantity;
                 subtotal += itemSubtotal;
 
@@ -149,11 +185,17 @@
                     <td>Rp ${item.price.toLocaleString()}</td>
                     <td>Rp ${itemSubtotal.toLocaleString()}</td>
                     <td>
-                        <button class="btn btn-danger btn-sm" onclick="removeFromCart(${item.id})">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeFromCart(${item.id})">
                             <i class="fas fa-times"></i>
                         </button>
                     </td>
                 </tr>
+            `;
+
+                // Add hidden inputs for form submission
+                productsInput.innerHTML += `
+                <input type="hidden" name="products[${index}][id]" value="${item.id}">
+                <input type="hidden" name="products[${index}][quantity]" value="${item.quantity}">
             `;
             });
 
@@ -178,55 +220,6 @@
             document.getElementById('total').value = 'Rp ' + total.toLocaleString();
         }
 
-        function processTransaction() {
-            if (cart.length === 0) {
-                alert('Keranjang kosong!');
-                return;
-            }
-
-            const products = cart.map(item => ({
-                id: item.id,
-                quantity: item.quantity
-            }));
-
-            const data = {
-                products,
-                service_fee: parseFloat(document.getElementById('serviceFee').value) || 0,
-                discount_type: document.getElementById('discountType').value,
-                discount_amount: parseFloat(document.getElementById('discountAmount').value) || 0,
-                payment_method: document.getElementById('paymentMethod').value
-            };
-
-            fetch('{{ route('pos.store') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (confirm('Transaksi berhasil! Invoice: ' + data.invoice +
-                                '\n\nApakah Anda ingin mencetak struk?')) {
-                            window.open('/transactions/' + data.transaction_id + '/print', '_blank');
-                        }
-
-                        cart = [];
-                        updateCart();
-                        document.getElementById('discountAmount').value = 0;
-                        document.getElementById('serviceFee').value = 50000;
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('Terjadi kesalahan!');
-                    console.error('Error:', error);
-                });
-        }
-
         // Search product
         document.getElementById('searchProduct').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
@@ -246,5 +239,13 @@
         document.getElementById('serviceFee').addEventListener('input', calculateTotal);
         document.getElementById('discountAmount').addEventListener('input', calculateTotal);
         document.getElementById('discountType').addEventListener('change', calculateTotal);
+
+        // Validate form before submission
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            if (cart.length === 0) {
+                e.preventDefault();
+                alert('Keranjang kosong! Tambahkan minimal satu produk.');
+            }
+        });
     </script>
 @endpush

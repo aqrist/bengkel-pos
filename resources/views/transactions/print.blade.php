@@ -67,8 +67,8 @@
 
 <body onload="window.print()">
     <div class="header">
-        <h2>BENGKEL POS</h2>
-        <p>Jl. Contoh Alamat No. 123</p>
+        <h2>BENGKEL BLOK Q</h2>
+        <p>Palem Asri II Blok Q nomor 19</p>
         <p>Telp: 021-12345678</p>
     </div>
 
@@ -102,6 +102,10 @@
         <tr>
             <td>Subtotal</td>
             <td class="text-right">{{ number_format($transaction->subtotal, 0, ',', '.') }}</td>
+        </tr>
+        <tr>
+            <td>Biaya Jasa</td>
+            <td class="text-right">{{ number_format($transaction->service_fee, 0, ',', '.') }}</td>
         </tr>
         @if ($transaction->discount_amount > 0)
             <tr>

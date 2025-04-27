@@ -8,8 +8,8 @@
                     <div class="card-body">
                         <div class="text-center mb-4">
                             <h3>INVOICE</h3>
-                            <h4>Bengkel POS</h4>
-                            <p>Jl. Contoh Alamat No. 123<br>Telp: 021-12345678</p>
+                            <h4>Bengkel Blok Q</h4>
+                            <p>Palem Asri II Blok Q nomor 19<br>Telp: 021-12345678</p>
                         </div>
 
                         <div class="row mb-4">
@@ -48,6 +48,10 @@
                                 <tr>
                                     <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
                                     <td class="text-end">Rp {{ number_format($transaction->subtotal, 0, ',', '.') }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Biaya Jasa:</strong></td>
+                                    <td class="text-end">Rp {{ number_format($transaction->service_fee, 0, ',', '.') }}</td>
                                 </tr>
                                 @if ($transaction->discount_amount > 0)
                                     <tr>
