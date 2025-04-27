@@ -2,98 +2,91 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center mt-4">
-            <h1>Detail Transaksi #{{ $transaction->invoice_number }}</h1>
-            <div>
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4">
+            <h1 class="h3 mb-3 mb-sm-0">Detail Transaksi</h1>
+            <div class="btn-group">
                 <a href="{{ route('transactions.index') }}" class="btn btn-secondary">Kembali</a>
                 <a href="{{ route('transactions.edit', $transaction) }}" class="btn btn-warning">Edit</a>
                 <a href="{{ route('transactions.print', $transaction) }}" class="btn btn-primary" target="_blank">Cetak</a>
             </div>
         </div>
 
-        <div class="row mt-4">
-            <div class="col-md-6">
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">Informasi Transaksi</h5>
                     </div>
                     <div class="card-body">
-                        @if (session('success'))
-                            <div class="alert alert-success mt-3">
-                                {{ session('success') }}
-                            </div>
-                        @endif
-                        <table class="table table-borderless">
-                            <tr>
-                                <th width="150">Invoice</th>
-                                <td>{{ $transaction->invoice_number }}</td>
-                            </tr>
-                            <tr>
-                                <th>Tanggal</th>
-                                <td>{{ $transaction->created_at->format('d/m/Y H:i') }}</td>
-                            </tr>
-                            <tr>
-                                <th>Kasir</th>
-                                <td>{{ $transaction->user->name }}</td>
-                            </tr>
-                            <tr>
-                                <th>Pembayaran</th>
-                                <td>{{ ucfirst($transaction->payment_method) }}</td>
-                            </tr>
-                        </table>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Invoice</dt>
+                            <dd class="col-sm-8">{{ $transaction->invoice_number }}</dd>
+
+                            <dt class="col-sm-4">Tanggal</dt>
+                            <dd class="col-sm-8">{{ $transaction->created_at->format('d/m/Y H:i') }}</dd>
+
+                            <dt class="col-sm-4">Kasir</dt>
+                            <dd class="col-sm-8">{{ $transaction->user->name }}</dd>
+
+                            <dt class="col-sm-4">Pembayaran</dt>
+                            <dd class="col-sm-8">{{ ucfirst($transaction->payment_method) }}</dd>
+                        </dl>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+
+            <div class="col-12 col-md-6">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">Total Pembayaran</h5>
                     </div>
                     <div class="card-body">
-                        <table class="table table-borderless">
-                            <tr>
-                                <th width="150">Subtotal</th>
-                                <td>Rp {{ number_format($transaction->subtotal, 0, ',', '.') }}</td>
-                            </tr>
-                            <tr>
-                                <th>Biaya Jasa</th>
-                                <td>Rp {{ number_format($transaction->service_fee, 0, ',', '.') }}</td>
-                            </tr>
-                            <tr>
-                                <th>Diskon</th>
-                                <td>
-                                    @if ($transaction->discount_type && $transaction->discount_amount > 0)
-                                        @if ($transaction->discount_type == 'percentage')
-                                            {{ $transaction->discount_amount }}%
-                                        @else
-                                            Rp {{ number_format($transaction->discount_amount, 0, ',', '.') }}
-                                        @endif
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Subtotal</dt>
+                            <dd class="col-sm-8">Rp {{ number_format($transaction->subtotal, 0, ',', '.') }}</dd>
+
+                            <dt class="col-sm-4">Biaya Jasa</dt>
+                            <dd class="col-sm-8">Rp {{ number_format($transaction->service_fee, 0, ',', '.') }}</dd>
+
+                            <dt class="col-sm-4">Diskon</dt>
+                            <dd class="col-sm-8">
+                                @if ($transaction->discount_type && $transaction->discount_amount > 0)
+                                    @if ($transaction->discount_type == 'percentage')
+                                        {{ $transaction->discount_amount }}%
                                     @else
-                                        -
+                                        Rp {{ number_format($transaction->discount_amount, 0, ',', '.') }}
                                     @endif
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>
-                                    <h5>Total</h5>
-                                </th>
-                                <td>
-                                    <h5>Rp {{ number_format($transaction->total, 0, ',', '.') }}</h5>
-                                </td>
-                            </tr>
-                        </table>
+                                @else
+                                    -
+                                @endif
+                            </dd>
+
+                            <dt class="col-sm-4">
+                                <h5 class="mb-0">Total</h5>
+                            </dt>
+                            <dd class="col-sm-8">
+                                <h5 class="mb-0">Rp {{ number_format($transaction->total, 0, ',', '.') }}</h5>
+                            </dd>
+                        </dl>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card mt-4">
+        <div class="card mt-3">
             <div class="card-header">
                 <h5 class="mb-0">Detail Produk</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-hover mb-0">
                         <thead>
                             <tr>
                                 <th>Produk</th>

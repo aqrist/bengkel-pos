@@ -2,9 +2,19 @@
 
 @section('content')
     <div class="container-fluid">
-        <h1 class="mt-4">Point of Sale</h1>
-        <div class="row mt-4">
-            <div class="col-md-7">
+        <h1 class="h3 mb-4">Point of Sale</h1>
+
+        <!-- Mobile Cart Toggle Button -->
+        <div class="d-lg-none mb-3">
+            <button class="btn btn-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
+                <i class="fas fa-shopping-cart me-2"></i>
+                Lihat Keranjang (<span id="cartCount">0</span>)
+            </button>
+        </div>
+
+        <div class="row">
+            <!-- Products Section -->
+            <div class="col-lg-7">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Daftar Produk</h5>
@@ -13,17 +23,16 @@
                         <div class="mb-3">
                             <input type="text" class="form-control" id="searchProduct" placeholder="Cari produk...">
                         </div>
-                        <div class="row" id="productList">
+                        <div class="row g-2" id="productList">
                             @foreach ($products as $product)
-                                <div class="col-md-4 mb-3 product-item">
+                                <div class="col-6 col-md-4 product-item">
                                     <div class="card h-100"
                                         onclick="addToCart({{ $product->id }}, '{{ $product->name }}', {{ $product->selling_price }})">
-                                        <div class="card-body">
-                                            <h6 class="card-title">{{ $product->name }}</h6>
-                                            <p class="card-text">Rp
+                                        <div class="card-body p-2">
+                                            <h6 class="card-title text-truncate mb-1">{{ $product->name }}</h6>
+                                            <p class="card-text mb-1">Rp
                                                 {{ number_format($product->selling_price, 0, ',', '.') }}</p>
-                                            <p class="card-text"><small class="text-muted">Stok:
-                                                    {{ $product->stock }}</small></p>
+                                            <small class="text-muted">Stok: {{ $product->stock }}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -32,65 +41,58 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-5">
+
+            <!-- Cart Section - Desktop -->
+            <div class="col-lg-5 d-none d-lg-block">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Keranjang</h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Produk</th>
-                                        <th>Qty</th>
-                                        <th>Harga</th>
-                                        <th>Subtotal</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cartItems">
-                                </tbody>
-                            </table>
-                        </div>
-                        <hr>
-                        <div class="mb-3">
-                            <label>Subtotal</label>
-                            <input type="text" class="form-control" id="subtotal" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Biaya Jasa</label>
-                            <input type="number" class="form-control" id="serviceFee" value="50000" min="0">
-                        </div>
-                        <div class="mb-3">
-                            <label>Diskon</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" id="discountAmount" min="0"
-                                    value="0">
-                                <select class="form-select" id="discountType" style="max-width: 120px;">
-                                    <option value="fixed">Rp</option>
-                                    <option value="percentage">%</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label>Total</label>
-                            <input type="text" class="form-control" id="total" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label>Metode Pembayaran</label>
-                            <select class="form-select" id="paymentMethod">
-                                <option value="cash">Tunai</option>
-                                <option value="non-cash">Non-Tunai</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary w-100" onclick="processTransaction()">Proses Pembayaran</button>
+                        @include('pos.cart-content')
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Cart Offcanvas for Mobile -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="cartOffcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">Keranjang</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            @include('pos.cart-content')
+        </div>
+    </div>
 @endsection
+
+@push('styles')
+    <style>
+        .product-item .card {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .product-item .card:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .offcanvas {
+            width: 100% !important;
+            max-width: 400px;
+        }
+
+        @media (max-width: 576px) {
+            .offcanvas {
+                max-width: 100%;
+            }
+        }
+    </style>
+@endpush
 
 @push('scripts')
     <script>
@@ -109,6 +111,11 @@
                 });
             }
             updateCart();
+
+            // Show notification on mobile
+            if (window.innerWidth < 992) {
+                showNotification('Produk ditambahkan ke keranjang');
+            }
         }
 
         function removeFromCart(id) {
@@ -129,8 +136,12 @@
         }
 
         function updateCart() {
-            const cartItems = document.getElementById('cartItems');
-            cartItems.innerHTML = '';
+            const cartItems = document.querySelectorAll('#cartItems');
+            const cartCount = document.getElementById('cartCount');
+
+            cartItems.forEach(element => {
+                element.innerHTML = '';
+            });
 
             let subtotal = 0;
 
@@ -138,16 +149,16 @@
                 const itemSubtotal = item.price * item.quantity;
                 subtotal += itemSubtotal;
 
-                cartItems.innerHTML += `
+                const rowHtml = `
                 <tr>
                     <td>${item.name}</td>
-                    <td>
+                    <td style="width: 80px;">
                         <input type="number" class="form-control form-control-sm" 
                                value="${item.quantity}" min="1" 
                                onchange="updateQuantity(${item.id}, this.value)">
                     </td>
-                    <td>Rp ${item.price.toLocaleString()}</td>
-                    <td>Rp ${itemSubtotal.toLocaleString()}</td>
+                    <td class="text-nowrap">Rp ${item.price.toLocaleString()}</td>
+                    <td class="text-nowrap">Rp ${itemSubtotal.toLocaleString()}</td>
                     <td>
                         <button class="btn btn-danger btn-sm" onclick="removeFromCart(${item.id})">
                             <i class="fas fa-times"></i>
@@ -155,17 +166,32 @@
                     </td>
                 </tr>
             `;
+
+                cartItems.forEach(element => {
+                    element.innerHTML += rowHtml;
+                });
             });
 
-            document.getElementById('subtotal').value = 'Rp ' + subtotal.toLocaleString();
+            document.querySelectorAll('#subtotal').forEach(element => {
+                element.value = 'Rp ' + subtotal.toLocaleString();
+            });
+
+            if (cartCount) {
+                cartCount.textContent = cart.length;
+            }
+
             calculateTotal();
         }
 
         function calculateTotal() {
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const serviceFee = parseFloat(document.getElementById('serviceFee').value) || 0;
-            const discountAmount = parseFloat(document.getElementById('discountAmount').value) || 0;
-            const discountType = document.getElementById('discountType').value;
+            const serviceFeeElements = document.querySelectorAll('#serviceFee');
+            const discountAmountElements = document.querySelectorAll('#discountAmount');
+            const discountTypeElements = document.querySelectorAll('#discountType');
+
+            const serviceFee = parseFloat(serviceFeeElements[0]?.value || 0);
+            const discountAmount = parseFloat(discountAmountElements[0]?.value || 0);
+            const discountType = discountTypeElements[0]?.value || 'fixed';
 
             let discount = 0;
             if (discountType === 'percentage') {
@@ -175,7 +201,10 @@
             }
 
             const total = subtotal + serviceFee - discount;
-            document.getElementById('total').value = 'Rp ' + total.toLocaleString();
+
+            document.querySelectorAll('#total').forEach(element => {
+                element.value = 'Rp ' + total.toLocaleString();
+            });
         }
 
         function processTransaction() {
@@ -191,11 +220,17 @@
 
             const data = {
                 products,
-                service_fee: parseFloat(document.getElementById('serviceFee').value) || 0,
-                discount_type: document.getElementById('discountType').value,
-                discount_amount: parseFloat(document.getElementById('discountAmount').value) || 0,
-                payment_method: document.getElementById('paymentMethod').value
+                service_fee: parseFloat(document.querySelector('#serviceFee').value) || 0,
+                discount_type: document.querySelector('#discountType').value,
+                discount_amount: parseFloat(document.querySelector('#discountAmount').value) || 0,
+                payment_method: document.querySelector('#paymentMethod').value
             };
+
+            // Show loading state
+            const submitButton = document.querySelector('button[onclick="processTransaction()"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            submitButton.disabled = true;
 
             fetch('{{ route('pos.store') }}', {
                     method: 'POST',
@@ -215,8 +250,14 @@
 
                         cart = [];
                         updateCart();
-                        document.getElementById('discountAmount').value = 0;
-                        document.getElementById('serviceFee').value = 50000;
+                        document.querySelectorAll('#discountAmount').forEach(el => el.value = 0);
+                        document.querySelectorAll('#serviceFee').forEach(el => el.value = 50000);
+
+                        // Close offcanvas on mobile
+                        const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('cartOffcanvas'));
+                        if (offcanvas) {
+                            offcanvas.hide();
+                        }
                     } else {
                         alert('Error: ' + data.message);
                     }
@@ -224,7 +265,23 @@
                 .catch(error => {
                     alert('Terjadi kesalahan!');
                     console.error('Error:', error);
+                })
+                .finally(() => {
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
                 });
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'position-fixed bottom-0 start-50 translate-middle-x mb-3 alert alert-success';
+            notification.textContent = message;
+            notification.style.zIndex = '9999';
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
         }
 
         // Search product
@@ -243,8 +300,29 @@
         });
 
         // Update total when service fee or discount changes
-        document.getElementById('serviceFee').addEventListener('input', calculateTotal);
-        document.getElementById('discountAmount').addEventListener('input', calculateTotal);
-        document.getElementById('discountType').addEventListener('change', calculateTotal);
+        document.querySelectorAll('#serviceFee').forEach(element => {
+            element.addEventListener('input', calculateTotal);
+        });
+
+        document.querySelectorAll('#discountAmount').forEach(element => {
+            element.addEventListener('input', calculateTotal);
+        });
+
+        document.querySelectorAll('#discountType').forEach(element => {
+            element.addEventListener('change', calculateTotal);
+        });
+
+        // Sync inputs between desktop and mobile
+        document.querySelectorAll('#serviceFee, #discountAmount, #discountType, #paymentMethod').forEach(element => {
+            element.addEventListener('change', function() {
+                const id = this.id;
+                const value = this.value;
+                document.querySelectorAll(`#${id}`).forEach(el => {
+                    if (el !== this) {
+                        el.value = value;
+                    }
+                });
+            });
+        });
     </script>
 @endpush

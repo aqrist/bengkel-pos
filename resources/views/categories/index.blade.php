@@ -2,57 +2,99 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center mt-4">
-            <h1>Kategori</h1>
-            <a href="{{ route('categories.create') }}" class="btn btn-primary">Tambah Kategori</a>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Kategori</h1>
+            <a href="{{ route('categories.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus d-sm-none"></i>
+                <span class="d-none d-sm-inline">Tambah Kategori</span>
+            </a>
         </div>
 
         @if (session('success'))
-            <div class="alert alert-success mt-3">
+            <div class="alert alert-success alert-dismissible fade show">
                 {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
 
-        <div class="card mt-4">
-            <div class="card-body">
+        <div class="card">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-hover mb-0">
                         <thead>
                             <tr>
                                 <th>No</th>
                                 <th>Nama</th>
-                                <th>Deskripsi</th>
-                                <th>Jumlah Produk</th>
+                                <th class="d-none d-md-table-cell">Deskripsi</th>
+                                <th>Jml Produk</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($categories as $category)
+                            @forelse($categories as $category)
                                 <tr>
-                                    <td>{{ $loop->iteration }}</td>
-                                    <td>{{ $category->name }}</td>
-                                    <td>{{ $category->description }}</td>
-                                    <td>{{ $category->products->count() }}</td>
+                                    <td>{{ $loop->iteration + ($categories->currentPage() - 1) * $categories->perPage() }}
+                                    </td>
                                     <td>
-                                        <a href="{{ route('categories.edit', $category) }}"
-                                            class="btn btn-sm btn-warning">Edit</a>
-                                        @if ($category->products->count() == 0)
-                                            <form action="{{ route('categories.destroy', $category) }}" method="POST"
-                                                class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger"
-                                                    onclick="return confirm('Yakin ingin menghapus?')">Hapus</button>
-                                            </form>
-                                        @endif
+                                        {{ $category->name }}
+                                        <div class="d-md-none small text-muted">
+                                            {{ Str::limit($category->description, 30) }}
+                                        </div>
+                                    </td>
+                                    <td class="d-none d-md-table-cell">{{ $category->description }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ $category->products->count() }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
+                                                data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item"
+                                                        href="{{ route('categories.edit', $category) }}">Edit</a></li>
+                                                @if ($category->products->count() == 0)
+                                                    <li>
+                                                        <form action="{{ route('categories.destroy', $category) }}"
+                                                            method="POST"
+                                                            onsubmit="return confirm('Yakin ingin menghapus?')">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit"
+                                                                class="dropdown-item text-danger">Hapus</button>
+                                                        </form>
+                                                    </li>
+                                                @else
+                                                    <li>
+                                                        <button class="dropdown-item text-muted" disabled>
+                                                            Hapus (Tidak bisa dihapus)
+                                                        </button>
+                                                    </li>
+                                                @endif
+                                            </ul>
+                                        </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                            <p>Belum ada kategori</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
-                {{ $categories->links() }}
             </div>
+            @if ($categories->hasPages())
+                <div class="card-footer">
+                    {{ $categories->links() }}
+                </div>
+            @endif
         </div>
     </div>
 @endsection

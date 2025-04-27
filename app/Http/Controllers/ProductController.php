@@ -39,7 +39,7 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $categories = Category::all();
-        return view('products.edit', compact('product', 'categories'));
+        return view('products.create', compact('product', 'categories'));
     }
 
     public function update(Request $request, Product $product)
